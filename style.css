@@ -1,0 +1,149 @@
+/* style.css */
+:root {
+    --primary-color: #E76F51;
+    --secondary-color: #F4A261;
+    --background-light: #FAF0E6;
+    --text-dark: #3A3A3A;
+    --accent-color: #264653;
+}
+
+body {
+    font-family: 'Quicksand', sans-serif;
+    background-color: var(--background-light);
+    color: var(--text-dark);
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 2rem;
+    line-height: 1.6;
+}
+
+h1, h2 {
+    color: var(--accent-color);
+    text-align: center;
+}
+
+#addProductBtn {
+    display: block;
+    margin: 20px auto;
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#addProductBtn:hover {
+    background-color: var(--accent-color);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80%;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.close-modal {
+    color: var(--primary-color);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover {
+    color: var(--accent-color);
+}
+
+/* Form Styles */
+.modal-content input, 
+.modal-content select, 
+.modal-content textarea {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+}
+
+#imagePreview {
+    max-width: 200px;
+    margin: 10px auto;
+    display: block;
+}
+
+/* Gallery Styles */
+.image-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.image-box {
+    background-color: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: 2px solid var(--secondary-color);
+    transition: transform 0.3s ease;
+}
+
+.image-box:hover {
+    transform: scale(1.05);
+}
+
+.image-box img {
+    width: 100%;
+    height: 250px;
+    object-fit: cover;
+}
+
+.image-box p {
+    padding: 10px;
+    margin: 0;
+}
+
+.edit-btn, .delete-btn {
+    width: 50%;
+    padding: 10px;
+    border: none;
+    color: white;
+}
+
+.edit-btn {
+    background-color: var(--secondary-color);
+}
+
+.delete-btn {
+    background-color: #E74C3C;
+}
+
+#search {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    border: 2px solid var(--secondary-color);
+    border-radius: 8px;
+}
