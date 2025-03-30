@@ -20,16 +20,43 @@ const productPrice = document.getElementById('productPrice');
 const productCategory = document.getElementById('productCategory');
 const submitProduct = document.getElementById('submitProduct');
 const successMessage = document.getElementById('successMessage');
+const authOverlay = document.getElementById('authOverlay');
+const mainContent = document.getElementById('mainContent');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const loginBtn = document.getElementById('loginBtn');
+const errorMessage = document.getElementById('errorMessage');
+const attemptMessage = document.getElementById('attemptMessage');
+const remainingAttempts = document.getElementById('remainingAttempts');
+const lockMessage = document.getElementById('lockMessage');
+const lockTimerElement = document.getElementById('lockTimer');
+const permanentLockMessage = document.getElementById('permanentLockMessage');
+const authForm = document.getElementById('authForm');
+const unlockBtn = document.getElementById('unlockBtn');
 
 // State
 let products = [];
 let editingProductId = null;
+let attemptCount = 0;
+let totalAttemptCount = 0;
+let isLocked = false;
+let lockTimer = null;
+let remainingTime = 0;
+let sessionTimer = null;
+const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+
+const AUTH_CREDENTIALS = {
+    username: "admin",
+    password: "admin123"
+};
+
+const UNLOCK_PASSWORD = "adminUnlock123"; // Mot de passe pour débloquer l'accès
 
 // Afficher le message de succès
 function showSuccessMessage() {
-    successMessage.textContent = "Requête réussi";
+    successMessage.textContent = "Requête réussie";
     successMessage.classList.remove('hidden');
-    
+
     setTimeout(() => {
         successMessage.classList.add('fade-out');
         setTimeout(() => {
@@ -330,7 +357,7 @@ submitProduct.addEventListener('click', async () => {
         }
 
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         // Afficher le message de succès
         showSuccessMessage();
 
@@ -353,3 +380,221 @@ categoryFilter.addEventListener('change', renderProducts);
 
 // Initial Load
 fetchProducts();
+
+// Authentication Functions
+function checkAuthStatus() {
+    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+    const isPermanentlyLocked = localStorage.getItem('permanentlyLocked') === 'true';
+
+    if (isPermanentlyLocked) {
+        showPermanentLock();
+        unlockBtn.classList.remove('hidden');
+        return;
+    }
+
+    if (isAuthenticated) {
+        showMainContent();
+        startSessionTimer();
+    }
+
+    const lockExpiryTime = localStorage.getItem('lockExpiryTime');
+    if (lockExpiryTime && parseInt(lockExpiryTime) > Date.now()) {
+        startLockTimer(Math.ceil((parseInt(lockExpiryTime) - Date.now()) / 1000));
+    }
+
+    if (localStorage.getItem('totalAttemptCount')) {
+        totalAttemptCount = parseInt(localStorage.getItem('totalAttemptCount'));
+    }
+}
+
+loginBtn.addEventListener('click', attemptLogin);
+
+passwordInput.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        attemptLogin();
+    }
+});
+
+function attemptLogin() {
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (isLocked) return;
+
+    if (username === AUTH_CREDENTIALS.username && password === AUTH_CREDENTIALS.password) {
+        localStorage.setItem('isAuthenticated', 'true');
+        showMainContent();
+        resetAttempts();
+        startSessionTimer();
+    } else {
+        attemptCount++;
+        totalAttemptCount++;
+        localStorage.setItem('totalAttemptCount', totalAttemptCount.toString());
+
+        authForm.classList.add('shake');
+        setTimeout(() => authForm.classList.remove('shake'), 500);
+
+        errorMessage.classList.remove('hidden');
+
+        if (attemptCount >= 3) {
+            lockTemporarily();
+        } else if (totalAttemptCount >= 5) {
+            lockPermanently();
+        } else {
+            remainingAttempts.textContent = 3 - attemptCount;
+            attemptMessage.classList.remove('hidden');
+        }
+
+        passwordInput.value = '';
+    }
+}
+
+function lockTemporarily() {
+    isLocked = true;
+    attemptMessage.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    lockMessage.classList.remove('hidden');
+
+    usernameInput.disabled = true;
+    passwordInput.disabled = true;
+    loginBtn.disabled = true;
+
+    const lockDuration = 60;
+    remainingTime = lockDuration;
+
+    const lockExpiryTime = Date.now() + (lockDuration * 1000);
+    localStorage.setItem('lockExpiryTime', lockExpiryTime.toString());
+
+    startLockTimer(lockDuration);
+}
+
+function startLockTimer(duration) {
+    isLocked = true;
+    remainingTime = duration;
+
+    lockMessage.classList.remove('hidden');
+    usernameInput.disabled = true;
+    passwordInput.disabled = true;
+    loginBtn.disabled = true;
+
+    lockTimer = setInterval(() => {
+        remainingTime--;
+        lockTimerElement.textContent = remainingTime;
+
+        if (remainingTime <= 0) {
+            clearInterval(lockTimer);
+            unlockForm();
+        }
+    }, 1000);
+
+    lockTimerElement.textContent = remainingTime;
+}
+
+function unlockForm() {
+    isLocked = false;
+
+    usernameInput.disabled = false;
+    passwordInput.disabled = false;
+    loginBtn.disabled = false;
+
+    lockMessage.classList.add('hidden');
+    errorMessage.classList.add('hidden');
+    attemptMessage.classList.add('hidden');
+
+    attemptCount = 0;
+
+    localStorage.removeItem('lockExpiryTime');
+}
+
+function lockPermanently() {
+    isLocked = true;
+
+    usernameInput.disabled = true;
+    passwordInput.disabled = true;
+    loginBtn.disabled = true;
+
+    errorMessage.classList.add('hidden');
+    attemptMessage.classList.add('hidden');
+    lockMessage.classList.add('hidden');
+    permanentLockMessage.classList.remove('hidden');
+
+    localStorage.setItem('permanentlyLocked', 'true');
+}
+
+function showPermanentLock() {
+    usernameInput.disabled = true;
+    passwordInput.disabled = true;
+    loginBtn.disabled = true;
+
+    errorMessage.classList.add('hidden');
+    attemptMessage.classList.add('hidden');
+    lockMessage.classList.add('hidden');
+    permanentLockMessage.classList.remove('hidden');
+}
+
+function resetAttempts() {
+    attemptCount = 0;
+    totalAttemptCount = 0;
+    localStorage.removeItem('totalAttemptCount');
+    localStorage.removeItem('permanentlyLocked');
+    localStorage.removeItem('lockExpiryTime');
+}
+
+function showMainContent() {
+    console.log("Authentification réussie, affichage du contenu principal.");
+    authOverlay.style.display = "none"; // Cache le modal
+    mainContent.style.display = "block"; // Affiche le contenu principal
+}
+
+
+unlockBtn.addEventListener('click', function() {
+    const unlockPassword = prompt("Entrez le mot de passe de déblocage :");
+    if (unlockPassword === UNLOCK_PASSWORD) {
+        unlockAccess();
+    } else {
+        alert("Mot de passe incorrect. L'accès reste bloqué.");
+    }
+});
+
+function unlockAccess() {
+    localStorage.removeItem('permanentlyLocked');
+    localStorage.removeItem('lockExpiryTime');
+    localStorage.removeItem('totalAttemptCount');
+    isLocked = false;
+    unlockBtn.classList.add('hidden');
+    permanentLockMessage.classList.add('hidden');
+    usernameInput.disabled = false;
+    passwordInput.disabled = false;
+    loginBtn.disabled = false;
+    attemptCount = 0;
+    totalAttemptCount = 0;
+}
+
+function startSessionTimer() {
+    sessionTimer = setTimeout(() => {
+        localStorage.removeItem('isAuthenticated');
+        showAuthOverlay();
+    }, SESSION_DURATION);
+
+    document.addEventListener('click', resetSessionTimer);
+    document.addEventListener('keypress', resetSessionTimer);
+}
+
+function resetSessionTimer() {
+    clearTimeout(sessionTimer);
+    startSessionTimer();
+}
+
+function showAuthOverlay() {
+    authOverlay.classList.remove('hidden');
+    mainContent.classList.add('hidden');
+    clearTimeout(sessionTimer);
+    document.removeEventListener('click', resetSessionTimer);
+    document.removeEventListener('keypress', resetSessionTimer);
+}
+
+window.addEventListener('beforeunload', () => {
+    localStorage.removeItem('isAuthenticated');
+});
+
+document.addEventListener('DOMContentLoaded', checkAuthStatus);
