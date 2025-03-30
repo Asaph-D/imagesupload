@@ -147,3 +147,101 @@ h1, h2 {
     border: 2px solid var(--secondary-color);
     border-radius: 8px;
 }
+
+/* ------------------------------------------------------------------------------- */
+
+/* Ajoutez ces styles dans votre fichier style.css ou dans une balise <style> dans votre HTML */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.skeleton-loader {
+    background: #f0f0f0;
+    background-image: linear-gradient(to right, #f0f0f0 0%, #e0e0e0 20%, #f0f0f0 40%, #f0f0f0 100%);
+    background-repeat: no-repeat;
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite linear;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.product-appear {
+    opacity: 0;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 500px;
+    text-align: center;
+    color: var(--text-dark);
+    opacity: 0;
+    animation: fadeIn 0.5s ease-out forwards;
+}
+
+.empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--secondary-color);
+}
+
+#loadingGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+@media (min-width: 768px) {
+    #loadingGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    #loadingGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.error-border {
+    border-color: red !important;
+}
+
+/* Message de succès */
+#successMessage {
+    transition: opacity 0.5s ease-in-out;
+    z-index: 1100;
+}
+
+/* Animation pour le message de succès */
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.fade-out {
+    animation: fadeOut 1s ease-out forwards;
+}

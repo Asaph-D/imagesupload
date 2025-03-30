@@ -19,10 +19,25 @@ const productDescription = document.getElementById('productDescription');
 const productPrice = document.getElementById('productPrice');
 const productCategory = document.getElementById('productCategory');
 const submitProduct = document.getElementById('submitProduct');
+const successMessage = document.getElementById('successMessage');
 
 // State
 let products = [];
 let editingProductId = null;
+
+// Afficher le message de succès
+function showSuccessMessage() {
+    successMessage.textContent = "Requête réussi";
+    successMessage.classList.remove('hidden');
+    
+    setTimeout(() => {
+        successMessage.classList.add('fade-out');
+        setTimeout(() => {
+            successMessage.classList.add('hidden');
+            successMessage.classList.remove('fade-out');
+        }, 1000);
+    }, 2000);
+}
 
 // Image Preview
 imageUpload.addEventListener('change', (e) => {
@@ -63,6 +78,58 @@ function resetModal() {
     imagePreviewContainer.classList.add('hidden');
     imageUploadPlaceholder.classList.remove('hidden');
     editingProductId = null;
+    clearErrorBorders();
+}
+
+// Clear Error Borders
+function clearErrorBorders() {
+    productName.classList.remove('error-border');
+    productDescription.classList.remove('error-border');
+    productPrice.classList.remove('error-border');
+    productCategory.classList.remove('error-border');
+}
+
+// Create Skeleton Loaders
+function createSkeletonLoaders() {
+    const loadingGrid = document.createElement('div');
+    loadingGrid.id = 'loadingGrid';
+    loadingGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+
+    for (let i = 0; i < 6; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton-loader bg-white rounded-lg shadow-md overflow-hidden transform transition-all';
+        skeleton.innerHTML = `
+            <div class="w-full h-48 skeleton-loader"></div>
+            <div class="p-4">
+                <div class="h-6 skeleton-loader mb-2 w-3/4"></div>
+                <div class="h-4 skeleton-loader mb-2 w-1/2"></div>
+                <div class="h-4 skeleton-loader mb-4 w-full"></div>
+                <div class="flex justify-between items-center">
+                    <div class="h-5 skeleton-loader w-16"></div>
+                    <div class="h-6 skeleton-loader w-20 rounded-full"></div>
+                </div>
+                <div class="flex mt-4 space-x-2">
+                    <div class="h-10 skeleton-loader flex-1"></div>
+                    <div class="h-10 skeleton-loader flex-1"></div>
+                </div>
+            </div>
+        `;
+        loadingGrid.appendChild(skeleton);
+    }
+
+    return loadingGrid;
+}
+
+// Create Empty State
+function createEmptyState(message = 'Aucun produit trouvé') {
+    const emptyState = document.createElement('div');
+    emptyState.className = 'empty-state col-span-1 md:col-span-2 lg:col-span-3';
+    emptyState.innerHTML = `
+        <div class="empty-state-icon">📦</div>
+        <h3 class="text-xl font-semibold mb-2">${message}</h3>
+        <p class="text-gray-500">Essayez de modifier vos filtres ou d'ajouter de nouveaux produits.</p>
+    `;
+    return emptyState;
 }
 
 // Fetch Products
@@ -97,49 +164,66 @@ function renderProducts() {
         return matchesSearch && matchesCategory;
     });
 
-    productGrid.innerHTML = filteredProducts.map(product => `
-        <div class="bg-white rounded-lg shadow-md overflow-hidden transform transition-all hover:scale-105">
-            <img
-                src="${product.image}"
-                alt="${product.nom}"
-                class="w-full h-48 object-cover"
-            />
-            <div class="p-4">
-                <h3 class="font-bold text-lg mb-2">${product.nom}</h3>
-                <p class="text-gray-600 text-sm mb-2">${product.description}</p>
-                <div class="flex justify-between items-center">
-                    <span class="text-green-600 font-semibold">
-                        ${product.prix} €
-                    </span>
-                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                        ${product.categorie}
-                    </span>
-                </div>
-                <div class="flex mt-4 space-x-2">
-                    <button
-                        onclick="editProduct(${product.id})"
-                        class="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 flex items-center justify-center"
-                    >
-                        Modifier
-                    </button>
-                    <button
-                        onclick="deleteProduct(${product.id})"
-                        class="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600 flex items-center justify-center"
-                    >
-                        Supprimer
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
+    productGrid.innerHTML = '';
+    const loadingGrid = createSkeletonLoaders();
+    productGrid.appendChild(loadingGrid);
 
-    // Toggle no products message
-    if (filteredProducts.length === 0) {
-        noProductsMessage.classList.remove('hidden');
+    setTimeout(() => {
         productGrid.innerHTML = '';
-    } else {
-        noProductsMessage.classList.add('hidden');
-    }
+
+        if (filteredProducts.length === 0) {
+            const emptyState = createEmptyState();
+            productGrid.appendChild(emptyState);
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+
+        filteredProducts.forEach((product, index) => {
+            const productElement = document.createElement('div');
+            productElement.className = 'product-appear bg-white rounded-lg shadow-md overflow-hidden transform transition-all hover:scale-105';
+            productElement.style.animationDelay = `${index * 0.1}s`;
+
+            productElement.innerHTML = `
+                <img
+                    src="${product.image}"
+                    alt="${product.nom}"
+                    class="w-full h-48 object-cover"
+                />
+                <div class="p-4">
+                    <h3 class="font-bold text-lg mb-2">${product.nom}</h3>
+                    <p class="text-gray-600 text-sm mb-2">${product.description}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-green-600 font-semibold">
+                            ${product.prix} €
+                        </span>
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                            ${product.categorie}
+                        </span>
+                    </div>
+                    <div class="flex mt-4 space-x-2">
+                        <button
+                            onclick="editProduct(${product.id})"
+                            class="flex-1 bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 flex items-center justify-center"
+                        >
+                            Modifier
+                        </button>
+                        <button
+                            onclick="deleteProduct(${product.id})"
+                            class="flex-1 bg-red-500 text-white p-2 rounded hover:bg-red-600 flex items-center justify-center"
+                        >
+                            Supprimer
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            grid.appendChild(productElement);
+        });
+
+        productGrid.appendChild(grid);
+    }, 1500); // Délai de 1.5 secondes pour simuler le chargement
 }
 
 // Edit Product
@@ -165,21 +249,52 @@ window.editProduct = (id) => {
 
 // Delete Product
 window.deleteProduct = async (id) => {
-    if (confirm('Voulez-vous vraiment supprimer ce produit ?')) {
-        try {
-            await fetch(`${BACKEND_URL}/products/${id}`, { method: 'DELETE' });
-            await fetchProducts();
-        } catch (error) {
-            console.error('Error deleting product:', error);
+    const productToDelete = products.find(p => p.id === id);
+    if (productToDelete) {
+        const confirmText = `Voulez-vous vraiment supprimer le produit "${productToDelete.nom}" ?`;
+        if (confirm(confirmText)) {
+            try {
+                await fetch(`${BACKEND_URL}/products/${id}`, { method: 'DELETE' });
+                showSuccessMessage();
+                await fetchProducts();
+            } catch (error) {
+                console.error('Error deleting product:', error);
+            }
         }
     }
 };
 
 // Submit Product
 submitProduct.addEventListener('click', async () => {
+    clearErrorBorders();
+    let hasError = false;
+
+    if (productName.value.trim() === '') {
+        productName.classList.add('error-border');
+        hasError = true;
+    }
+
+    if (productDescription.value.trim() === '') {
+        productDescription.classList.add('error-border');
+        hasError = true;
+    }
+
+    if (productPrice.value.trim() === '') {
+        productPrice.classList.add('error-border');
+        hasError = true;
+    }
+
+    if (productCategory.value.trim() === '') {
+        productCategory.classList.add('error-border');
+        hasError = true;
+    }
+
+    if (hasError) {
+        return;
+    }
+
     const formData = new FormData();
 
-    // Only append image if a new file is selected
     if (imageUpload.files.length > 0) {
         formData.append('image', imageUpload.files[0]);
     }
@@ -189,8 +304,15 @@ submitProduct.addEventListener('click', async () => {
     formData.append('prix', productPrice.value);
     formData.append('categorie', productCategory.value);
 
-    console.log('Product after initialisation:', Object.fromEntries(formData));
-    
+    const originalText = submitProduct.textContent;
+    submitProduct.innerHTML = `
+        <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        ${editingProductId ? 'Mise à jour...' : 'Ajout...'}
+    `;
+    submitProduct.disabled = true;
 
     try {
         const url = editingProductId
@@ -198,7 +320,6 @@ submitProduct.addEventListener('click', async () => {
             : `${BACKEND_URL}/products`;
 
         const method = editingProductId ? 'PUT' : 'POST';
-
         const response = await fetch(url, {
             method,
             body: formData
@@ -208,7 +329,10 @@ submitProduct.addEventListener('click', async () => {
             throw new Error('Network response was not ok');
         }
 
-        console.log('Product submitted:', Object.fromEntries(formData));
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Afficher le message de succès
+        showSuccessMessage();
 
         await fetchProducts();
 
@@ -216,6 +340,10 @@ submitProduct.addEventListener('click', async () => {
         productModal.classList.add('hidden');
     } catch (error) {
         console.error('Error submitting product:', error);
+        alert('Erreur lors de l\'enregistrement du produit');
+    } finally {
+        submitProduct.innerHTML = originalText;
+        submitProduct.disabled = false;
     }
 });
 
